@@ -36,23 +36,22 @@ const messageController = {
           if (error) {
             console.log(error);
           }
-          const pmessage = {
+          const newMessage = {
             senderId: senderId,
             receiverId: receiverId,
             message: message,
           };
-          conversation.messages.push(pmessage);
+          conversation.messages.push(newMessage);
           conversation.save();
-          res.status(201).json(pmessage);
+          res.status(201).json(newMessage);
+          // SOCKET IO FUNCTIONALITY WILL GO HERE
+          const receiverSocketId = getReceiverSocketId(receiverId);
+          if (receiverSocketId) {
+            // io.to(<socket_id>).emit() used to send events to specific client
+            io.to(receiverSocketId).emit("newMessage", newMessage);
+          }
         }
       );
-
-      // SOCKET IO FUNCTIONALITY WILL GO HERE
-      const receiverSocketId = getReceiverSocketId(receiverId);
-      if (receiverSocketId) {
-        // io.to(<socket_id>).emit() used to send events to specific client
-        io.to(receiverSocketId).emit("newMessage", newMessage);
-      }
     } catch (error) {
       console.log("Error in sendMessage controller: ", error.message);
       res.status(500).json({ error: "Internal server error" });

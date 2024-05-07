@@ -13,13 +13,14 @@ const userRoute = require("./routes/user");
 const messageRoute = require("./routes/message");
 
 const app = express();
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 
 // Routes
-app.use("/api/auth", cors(), authRoute);
-app.use("/api/user", cors(), userRoute);
-app.use("/api/messages", cors(), messageRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/user", userRoute);
+app.use("/api/messages", messageRoute);
 
 app.listen(5001, () => {
   console.log("Server is running on port 5001");
