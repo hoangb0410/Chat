@@ -61,22 +61,22 @@ const messageController = {
     try {
       const userToChatId = req.params.id;
       const senderId = req.user.id;
-      // db.query(
-      //   "CALL getConversation(?,?)",
-      //   [senderId, userToChatId],
-      //   (error, results) => {
-      //     if (error) {
-      //       console.log(error);
-      //     }
-      //     res.status(200).json(results[0]);
-      //   }
-      // );
-      const conversation = await Conversation.findOne({
-        participants: { $all: [senderId, userToChatId] },
-      }).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
-      if (!conversation) return res.status(200).json([]);
-      const messages = conversation.messages;
-      res.status(200).json(messages);
+      db.query(
+        "CALL getConversation(?,?)",
+        [senderId, userToChatId],
+        (error, results) => {
+          if (error) {
+            console.log(error);
+          }
+          res.status(200).json(results[0]);
+        }
+      );
+      // const conversation = await Conversation.findOne({
+      //   participants: { $all: [senderId, userToChatId] },
+      // }).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
+      // if (!conversation) return res.status(200).json([]);
+      // const messages = conversation.messages;
+      // res.status(200).json(messages);
     } catch (error) {
       console.log("Error in getMessages controller: ", error.message);
       res.status(500).json({ error: "Internal server error" });
