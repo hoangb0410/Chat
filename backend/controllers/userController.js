@@ -1,7 +1,7 @@
-const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const client = require("../connectDB/connect_redis");
 const mysql = require("mysql");
+const Conversation = require("../models/Conversation");
 const generateTokenAndSetCookie = require("../utils/generateToken");
 
 const db = mysql.createConnection({
@@ -110,71 +110,38 @@ const userController = {
       res.status(500).json({ error: "Internal server error" });
     }
   },
-  /*
-  // Get all users
-  getAllUsers: async (req, res) => {
-    try {
-      const user = await User.find();
-      res.status(200).json(user);
-    } catch (err) {
-      res.status(500).json(err);
-    }
-  },
-  // Get user by id
-  getUser: async (req, res) => {
-    try {
-      const user = await User.findById(req.params.id);
-      res.status(200).json(user);
-    } catch (err) {
-      res.status(500).json(err);
-    }
-  },
   // Update user
   updateUser: async (req, res) => {
     try {
       // Validate user ID
-      const { id } = req.params;
+      const id = req.user.id;
       if (!id) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      const {
-        username,
-        email,
-        fullName,
-        interest_site,
-        isAdmin,
-        interest_event,
-      } = req.body;
+      const { fullName, username, password, gender, profilePic } = req.body;
       const updateData = {};
-      updateData.username = username;
-      updateData.email = email;
-      updateData.fullName = fullName;
-      updateData.interest_site = interest_site;
-      updateData.interest_event = interest_event;
-      // Only admin can edit isAdmin property
-      if (isAdmin) {
-        if (req.user.isAdmin) {
-          updateData.isAdmin = isAdmin;
-        } else {
-          return res.status(403).json("Only admin can edit isAdmin");
-        }
-      }
-      if (req.body.password) {
+      if (fullName) updateData.fullName = fullName;
+      if (username) updateData.username = username;
+      if (gender) updateData.gender = gender;
+      if (profilePic) updateData.profilePic = profilePic;
+      if (password) {
         const salt = await bcrypt.genSalt(10);
-        const hashed = await bcrypt.hash(req.body.password, salt);
+        const hashed = await bcrypt.hash(password, salt);
         updateData.password = hashed;
       }
-      // Update user in the database
-      const updatedUser = await User.findByIdAndUpdate(
-        id,
-        { $set: updateData },
-        { new: true }
+
+      db.query(
+        "UPDATE users SET ? WHERE id = ? ",
+        [updateData, req.user.id],
+        (error, results) => {
+          if (error) {
+            console.log(error);
+            res.status(400).json(error);
+          } else {
+            res.status(200).json({ message: "Update successfull" });
+          }
+        }
       );
-      // Check if the user was found and updated
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.status(200).json(updatedUser);
     } catch (err) {
       res.status(500).json(err);
       console.log(err);
@@ -183,19 +150,28 @@ const userController = {
   // Delete user
   deleteUser: async (req, res) => {
     try {
-      //const user = await User.findById(req.params.id);
-      const user = await User.findByIdAndDelete(req.params.id); // Xoa that
-      // remove refresh token from redis
-      client.del(user.id.toString(), (err) => {
-        if (err) {
-          console.log(err);
+      db.query(
+        "DELETE FROM users WHERE id = ?",
+        [req.user.id],
+        async (error, results) => {
+          if (error) {
+            console.log(error);
+            res.status(400).json(error);
+          }
+          await Conversation.deleteMany({ participants: req.user.id });
+          // remove refresh token from redis
+          client.del(req.user.id.toString(), (err) => {
+            if (err) {
+              console.log(err);
+            }
+          });
+          res.status(200).json("Delete successful!");
         }
-      });
-      res.status(200).json("Delete successful!");
+      );
     } catch (err) {
       res.status(500).json(err);
     }
-  },*/
+  },
 };
 
 module.exports = userController;

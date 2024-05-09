@@ -43,13 +43,13 @@ const messageController = {
           };
           conversation.messages.push(newMessage);
           conversation.save();
-          res.status(201).json(newMessage);
           // SOCKET IO FUNCTIONALITY WILL GO HERE
           const receiverSocketId = getReceiverSocketId(receiverId);
           if (receiverSocketId) {
             // io.to(<socket_id>).emit() used to send events to specific client
             io.to(receiverSocketId).emit("newMessage", newMessage);
           }
+          res.status(201).json(newMessage);
         }
       );
     } catch (error) {
@@ -59,9 +59,18 @@ const messageController = {
   },
   getMessages: async (req, res) => {
     try {
-      const { id: userToChatId } = req.params;
+      const userToChatId = req.params.id;
       const senderId = req.user.id;
-
+      // db.query(
+      //   "CALL getConversation(?,?)",
+      //   [senderId, userToChatId],
+      //   (error, results) => {
+      //     if (error) {
+      //       console.log(error);
+      //     }
+      //     res.status(200).json(results[0]);
+      //   }
+      // );
       const conversation = await Conversation.findOne({
         participants: { $all: [senderId, userToChatId] },
       }).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
