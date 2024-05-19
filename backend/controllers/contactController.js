@@ -11,8 +11,8 @@ const contactController = {
   deleteFriend: async (req, res) => {
     try {
       db.query(
-        "DELETE FROM contacts WHERE userId = ? AND friendId = ?",
-        [req.user.id, req.params.id],
+        "DELETE FROM contacts WHERE (userId = ? AND friendId = ?) OR (userId = ? AND friendId = ?)",
+        [req.user.id, req.params.id, req.params.id, req.user.id],
         (error, results) => {
           if (error) {
             console.log(error);
